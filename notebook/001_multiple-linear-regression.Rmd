@@ -1,0 +1,200 @@
+---
+title: "Multiple Linear Regression"
+author: "SBM-ITB"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# Set Seed 
+set.seed(1234)
+```
+
+# Install Packages
+```{r}
+install.packages("corrplot")
+install.packages("car")
+install.packages("moments")
+install.packages("e1071")
+install.packages("lmtest")
+install.packages("tidyverse")
+```
+
+# Load Librray
+```{r}
+library("corrplot")
+library("car")
+library("moments")
+library("e1071")
+library("lmtest")
+library("tidyverse")
+```
+
+# Import Data
+```{r}
+# Prestige Data
+Prestige
+```
+
+```{r}
+# Assign as dataframe
+df <- Prestige
+```
+
+# Explore The Data
+```{r}
+# Show Data
+df
+```
+
+```{r}
+# Show Data Type
+str(df)
+```
+
+```{r}
+# Show Basic Statistics Information
+summary(df)
+```
+
+```{r}
+# Subset the data to capture income, education, women and prestige
+df_new = df[c("education", "income", "women", "prestige")]
+df_new
+```
+
+```{r}
+# Plot matrix of all variables
+plot(df_new, col="blue", main="Matrix Scatterplot of Income, Education, Women and Prestige")
+```
+
+# Normality Test
+
+```{r}
+# Densiity Plot
+plot(density(df_new$education), main = "Education Data Distribution", xlab = "Education")
+plot(density(df_new$income), main = "Income Data Distribution", xlab = "Income")
+plot(density(df_new$women), main = "Women Data Distribution", xlab = "Women")
+plot(density(df_new$prestige), main = "Prestige Data Distribution", xlab = "Prestige")
+```
+
+```{r}
+# QQ Plot
+qqnorm(df_new$education, main = "QQPlot: Education")
+qqline(df_new$education, col = "red")
+
+qqnorm(df_new$income, main = "QQPlot: Income")
+qqline(df_new$income, col = "red")
+
+qqnorm(df_new$women, main = "QQPlot: Women")
+qqline(df_new$women, col = "red")
+
+qqnorm(df_new$prestige, main = "QQPlot: Prestige")
+qqline(df_new$prestige, col = "red")
+```
+
+```{r}
+# Kurtosis
+kurtosis_education <- kurtosis(df_new$education, type = 2)
+kurtosis_income <- kurtosis(df_new$income, type = 2)
+kurtosis_women <- kurtosis(df_new$women, type = 2)
+kurtosis_prestige <- kurtosis(df_new$prestige, type = 2)
+
+list_kurstosis <- data.frame(kurtosis_education, kurtosis_income, kurtosis_women, kurtosis_prestige)   
+list_kurstosis
+```
+
+```{r}
+# Skewness
+skew_education <- skewness(df_new$education, type = 2)
+skew_income <- skewness(df_new$income, type = 2)
+skew_women <- skewness(df_new$women, type = 2)
+skew_prestige <- skewness(df_new$prestige, type = 2)
+
+list_skewness <- data.frame(skew_education, skew_income, skew_women, skew_prestige)
+list_skewness
+```
+
+# Fit Linear Model
+
+```{r}
+# Fit a linear model: income as respose variable; education, women, and prestige as predictor variables)
+lm_model <- lm(income ~ education + prestige + women, data = df_new)
+lm_model
+```
+
+```{r}
+# Check Summary of The Model
+summary(lm_model)
+```
+
+```{r}
+df_correlation <- cor(df_new)
+corrplot(df_correlation, method = "number")
+```
+
+# Transform Data
+
+```{r}
+# Center predictors.
+education_centered = scale(df_new$education, center=TRUE, scale=FALSE)
+prestige_centered = scale(df_new$prestige, center=TRUE, scale=FALSE)
+women_centered  = scale(df_new$women, center=TRUE, scale=FALSE)
+
+# bind these new variables into df_new and display a summary.
+new_variable = cbind(education_centered, prestige_centered, women_centered)
+df_scaled <- cbind(df_new, new_variable)
+names(df_scaled)[5:7] = c("education_centered", "prestige_centered", "women_centered" )
+
+df_scaled
+```
+```{r}
+# See Scaled Data Summary
+summary(df_scaled)
+```
+
+# Fit Model 2
+
+```{r}
+#fit a new linear model from transformed data
+lm_model2 <- lm(income ~ education_centered + prestige_centered + women_centered, data= df_scaled)
+summary(lm_model2)
+```
+
+# Fit Model 3
+
+```{r}
+# fit a linear model excluding the variable education
+lm_model3 = lm(income ~ prestige_centered + women_centered, data = df_scaled)
+summary(lm_model3)
+```
+
+```{r}
+# Check Heterocedasticity
+bptest(lm_model)
+bptest(lm_model2)
+bptest(lm_model3)
+```
+
+```{r}
+#Plot residuals
+plot(lm_model3)
+```
+
+```{r}
+# Check the Linearity
+anova(lm_model)
+anova(lm_model2)
+anova(lm_model3)
+```
+
+```{r}
+# Check the Multicolinearity
+vif(lm_model)
+vif(lm_model2)
+vif(lm_model3)
+```
+
